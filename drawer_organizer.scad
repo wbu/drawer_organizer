@@ -21,6 +21,8 @@ translate([80,0,0])
     connector_t();
 translate([120,0,0])
     connector_x();
+translate([160,0,0])
+    connector_corner();
 
 module profile(length=150) {
     rotate([90,0,0]) {
@@ -37,9 +39,27 @@ module profile(length=150) {
     }
 }
 
-module profile_corner() {
+module profile_corner(round=false) {
+    // bottom part
     difference() {
-        cube([0.5*connector_length, 0.5*connector_length, height_linear]);
+        if (round) {
+            intersection() {
+                translate([-0.5*connector_length, -0.5*connector_length])
+                    cube([connector_length, connector_length, height_linear]);
+                translate([0.5*connector_length, 0.5*connector_length]) {
+                    rotate_extrude() {
+                        polygon([
+                            [0, 0],
+                            [0.5*connector_length+radius_bottom, 0],
+                            [0.5*connector_length+radius_top, height_linear],
+                            [0, height_linear]
+                        ]);
+                    }
+                }
+            }
+        } else {
+            cube([0.5*connector_length, 0.5*connector_length, height_linear]);
+        }
         translate([0.5*connector_length, 0.5*connector_length]) {
             rotate_extrude() {
                 polygon([
@@ -51,9 +71,16 @@ module profile_corner() {
             }
         }
     }
+    // top round part
     intersection() {
-        translate([0, 0, height_linear])
-            cube([0.5*connector_length, 0.5*connector_length, radius_top]);
+        translate([0, 0, height_linear]) {
+            if (round) {
+                translate([-0.5*connector_length, -0.5*connector_length])
+                    cube([connector_length, connector_length, radius_top]);
+            } else {
+                cube([0.5*connector_length, 0.5*connector_length, radius_top]);
+            }
+        }
         translate([0.5*connector_length, 0.5*connector_length]) {
             rotate_extrude() {
                 translate([0.5*connector_length, height_linear])
@@ -61,11 +88,14 @@ module profile_corner() {
             }
         }
     }
-    difference() {
-        translate([0, 0, height_linear])
-            cube([0.5*connector_length, 0.5*connector_length, radius_top]);
-        translate([0.5*connector_length, 0.5*connector_length, height_linear])
-            cylinder(h=radius_top, r=0.5*connector_length);
+    // top flat part
+    if (!round) {
+        difference() {
+            translate([0, 0, height_linear])
+                cube([0.5*connector_length, 0.5*connector_length, radius_top]);
+            translate([0.5*connector_length, 0.5*connector_length, height_linear])
+                cylinder(h=radius_top, r=0.5*connector_length);
+        }
     }
 }
 
@@ -139,5 +169,16 @@ module connector_t() {
         }
         translate([0,0.5*connector_length,0])
             profile(connector_length);
+    }
+}
+
+module connector_corner() {
+    union() {
+        profile_corner(round=true);
+        for (r=[0,270]) {
+            rotate([0,0,r])
+                translate([0,0.5*connector_length,0])
+                    fitting(male=true);
+        }
     }
 }
