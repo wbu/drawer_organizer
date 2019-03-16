@@ -117,7 +117,8 @@ module fitting(male=true) {
             circle(r=0.6*radius_bottom-gap);
             // add "air channel" for female piece
             if (!male)
-                square([0.2*radius_bottom, 0.9*radius_bottom]);
+                translate([-0.1*radius_bottom,0])
+                    square([0.2*radius_bottom, radius_bottom]);
         }
     }
 }
