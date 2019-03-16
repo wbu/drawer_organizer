@@ -14,7 +14,6 @@ radius_top = width_top/2;
 height_linear = height-radius_top;
 connector_length = 2*width_bottom;
 
-
 showcase();
 
 
@@ -23,12 +22,14 @@ module showcase() {
         divider_bend();
     divider();
     translate([40,0,0])
-        connector_straight();
+        connector_zero();
     translate([80,0,0])
-        connector_t();
+        connector_straight();
     translate([120,0,0])
-        connector_x();
+        connector_t();
     translate([160,0,0])
+        connector_x();
+    translate([200,0,0])
         connector_corner();
 }
 
@@ -126,6 +127,9 @@ module fitting(male=true) {
     gap = male ? gap : 0;
     gap_top = male ? gap_top : 0;
     connector_length = radius_bottom;
+    // For crazy people, that choose width_top > width_bottom. Otherwise pieces
+    // cannot be sticked together. Such a design actually looks quite nice ;)
+    radius_top = radius_top <= radius_bottom ? radius_top : radius_bottom;
     radius_top_corrected = radius_top+(radius_bottom-radius_top)*gap_top/height_linear;
     linear_extrude(height=height_linear-gap_top, scale=radius_top_corrected/radius_bottom) {
         polygon([
@@ -184,6 +188,14 @@ module divider_bend(length=100, distance=20, radius=50) {
             fitting(male=false);
         translate([distance,-length])
             fitting(male=false);
+    }
+}
+
+module connector_zero() {
+    union() {
+        fitting(male=true);
+        rotate([0,0,180])
+            fitting(male=true);
     }
 }
 
