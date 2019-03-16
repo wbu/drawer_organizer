@@ -14,27 +14,48 @@ radius_top = width_top/2;
 height_linear = height-radius_top;
 connector_length = 2*width_bottom;
 
-divider();
-translate([40,0,0])
-    connector_straight();
-translate([80,0,0])
-    connector_t();
-translate([120,0,0])
-    connector_x();
-translate([160,0,0])
-    connector_corner();
+
+showcase();
+
+
+module showcase() {
+    translate([-40,0,0])
+        divider_bend();
+    divider();
+    translate([40,0,0])
+        connector_straight();
+    translate([80,0,0])
+        connector_t();
+    translate([120,0,0])
+        connector_x();
+    translate([160,0,0])
+        connector_corner();
+}
+
+module profile_shape() {
+    polygon([
+        [-radius_bottom, 0],
+        [radius_bottom, 0],
+        [radius_top, height_linear],
+        [-radius_top, height_linear]
+    ]);
+    translate([0, height_linear])
+        circle(r=radius_top);
+}
 
 module profile(length=150) {
-    rotate([90,0,0]) {
-        linear_extrude(height=length) {
-            polygon([
-                [-radius_bottom, 0],
-                [radius_bottom, 0],
-                [radius_top, height_linear],
-                [-radius_top, height_linear]
-            ]);
-            translate([0, height_linear])
-                circle(r=radius_top);
+    rotate([90,0,0])
+        linear_extrude(height=length)
+            profile_shape();
+}
+
+module profile_round(radius, angle=90) {
+    translate([-radius,0]) {
+        rotate([0,0,0]) {
+            rotate_extrude(angle=angle) {
+                translate([radius,0])
+                    profile_shape();
+            }
         }
     }
 }
@@ -128,7 +149,40 @@ module divider(length=100) {
         profile(length);
         rotate([0,0,180])
             fitting(male=false);
-        translate([0,-length,0])
+        translate([0,-length])
+            fitting(male=false);
+    }
+}
+
+module divider_bend(length=100, distance=20, radius=50) {
+    // more helpful error message for rotate_extrude() error in profile_round()
+    assert(radius >= radius_bottom, str("divider_bend: radius (", radius, ") too small, must be >= ", radius_bottom));
+    angle = distance >= 2*radius ? 90 : acos(1-0.5*distance/radius);
+    length_ortho = distance >= 2*radius ? distance-2*radius : 0;
+    length_round = distance >= 2*radius ? radius : sin(angle)*radius;
+    length_start = 0.5*(length-2*length_round);
+    assert(length >= 2*length_round, "divider_bend: length too short or radius too big");
+    difference() {
+        union() {
+            if (length_start > 0) {
+                profile(length_start);
+                translate([distance,length_start-length])
+                    profile(length_start);
+            }
+            translate([0,-length_start])
+                rotate([0,0,180])
+                    profile_round(radius=radius, angle=angle);
+            translate([distance, length_start-length])
+                profile_round(radius=radius, angle=angle);
+            if (length_ortho > 0) {
+                translate([radius,-0.5*length])
+                    rotate([0,0,90])
+                        profile(length_ortho);
+            }
+        }
+        rotate([0,0,180])
+            fitting(male=false);
+        translate([distance,-length])
             fitting(male=false);
     }
 }
