@@ -3,6 +3,7 @@ width_bottom = 13;
 width_top = 5;
 
 gap = 0.15;
+gap_top = 1;  // overhang needs bigger tolerances
 
 $fa = 5;
 $fs = 0.1;
@@ -69,9 +70,12 @@ module profile_90degree() {
 
 
 module fitting(male=true) {
-    gap = male ? gap : 0;  // shrink male piece a little bit
+    // shrink male piece a little bit
+    gap = male ? gap : 0;
+    gap_top = male ? gap_top : 0;
     connector_length = radius_bottom;
-    linear_extrude(height=height-radius_top-gap, scale=width_top/width_bottom) {
+    radius_top_corrected = radius_top+(radius_bottom-radius_top)*gap_top/(height-radius_top);
+    linear_extrude(height=height-radius_top-gap_top, scale=radius_top_corrected/radius_bottom) {
         polygon([
             [-0.3*radius_bottom+gap, 0],
             [0.3*radius_bottom-gap, 0],
