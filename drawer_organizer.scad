@@ -161,10 +161,11 @@ module divider(length=100) {
 module divider_bend(length=100, distance=20, radius=50) {
     // more helpful error message for rotate_extrude() error in profile_round()
     assert(radius >= radius_bottom, str("divider_bend: radius (", radius, ") too small, must be >= ", radius_bottom));
-    angle = distance >= 2*radius ? 90 : acos(1-0.5*distance/radius);
-    length_ortho = distance >= 2*radius ? distance-2*radius : 0;
-    length_round = distance >= 2*radius ? radius : sin(angle)*radius;
+    angle = (abs(distance) >= 2*radius ? 90 : acos(1-0.5*abs(distance)/radius))*sign(distance);
+    length_ortho = abs(distance) >= 2*radius ? abs(distance)-2*radius : 0;
+    length_round = abs(distance) >= 2*radius ? radius : abs(sin(angle))*radius;
     length_start = 0.5*(length-2*length_round);
+    echo(angle, length_ortho, length_round, length_start);
     assert(length >= 2*length_round, "divider_bend: length too short or radius too big");
     difference() {
         union() {
@@ -175,11 +176,11 @@ module divider_bend(length=100, distance=20, radius=50) {
             }
             translate([0,-length_start])
                 rotate([0,0,180])
-                    profile_round(radius=radius, angle=angle);
+                    profile_round(radius=radius*sign(angle), angle=angle);
             translate([distance, length_start-length])
-                profile_round(radius=radius, angle=angle);
+                profile_round(radius=radius*sign(angle), angle=angle);
             if (length_ortho > 0) {
-                translate([radius,-0.5*length])
+                translate([angle>0?radius:-length_ortho-radius,-0.5*length])
                     rotate([0,0,90])
                         profile(length_ortho);
             }
