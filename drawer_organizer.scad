@@ -22,11 +22,11 @@ example();
 
 
 module showcase(space=40) {
-    module lineup(space) {
+    module line_up(space) {
        for (i = [0 : 1 : $children-1])
          translate([ space*i, 0, 0 ]) children(i);
     }
-    lineup(space) {
+    line_up(space) {
         divider_bend(distance=-20);
         divider_bend();
         divider_lowered();
@@ -50,16 +50,16 @@ module example() {
     border_corner([30,150]);
     translate([2*(30+connector_length), 0])
         rotate([0, 0, 270])
-            border_straight(30);
+            border_straight_x(30);
     translate([3*(30+connector_length), 0])
         rotate([0, 0, 270])
-            border_straight(30);
+            border_straight_x(30);
     translate([4*(30+connector_length), 0])
         rotate([0, 0, 270])
-            border_straight(30);
+            border_straight_x(30);
     translate([5*(30+connector_length), 0])
         rotate([0, 0, 270])
-            border_straight(30);
+            border_straight_x(30);
     translate([6*(30+connector_length), 0])
         border_corner_flipped([30,150]);
     translate([0, -(150+30+2*connector_length)])
@@ -539,42 +539,46 @@ module add_distance_xy(length, distance) {
     }
 }
 
-module border_straight(length=100, distance=0) {
-    add_distance_xy([0, length], [0, distance]) {
-        intersection() {
-            union() {
-                translate([0, -0.5*connector_length, 0])
-                    profile(length);
+module _border_straight(length=100, distance=0) {
+    translate([0, -0.5*gap, 0]) {
+        add_distance_xy([0, length-gap], [0, distance]) {
+            translate([0, 0.5*gap, 0]) {
+                intersection() {
+                    union() {
+                        translate([0, -0.5*connector_length, 0])
+                            profile(length);
 
-                rotate([0, 0, 270])
-                    profile_corner();
+                        rotate([0, 0, 270])
+                            profile_corner();
 
-                translate([0, -(length+connector_length), 0])
-                    profile_corner();
+                        translate([0, -(length+connector_length), 0])
+                            profile_corner();
 
-                translate([0.5*connector_length, 0, 0])
-                    rotate([0, 0, 270])
-                        fitting(male=true);
-                translate([0.5*connector_length, -(length+connector_length), 0])
-                    rotate([0, 0, 270])
-                        fitting(male=true);
+                        translate([0.5*connector_length, 0, 0])
+                            rotate([0, 0, 270])
+                                fitting(male=true);
+                        translate([0.5*connector_length, -(length+connector_length), 0])
+                            rotate([0, 0, 270])
+                                fitting(male=true);
+                    }
+                    translate([0, -(length+connector_length-0.5*gap), 0])
+                        cube([2*connector_length, length+connector_length-gap, height]);
+                }
             }
-            translate([0, -(length+connector_length), 0])
-                cube([2*connector_length, length+connector_length, height]);
         }
     }
 }
 
 module border_straight_x(width=100) {
-    border_straight(length=width, distance=border_top_bottom_distance[0]);
+    _border_straight(length=width, distance=border_top_bottom_distance[0]);
 }
 
 module border_straight_y(depth=100) {
-    border_straight(length=depth, distance=border_top_bottom_distance[1]);
+    _border_straight(length=depth, distance=border_top_bottom_distance[1]);
 }
 
 module border_corner(length=[30, 100], distance=border_top_bottom_distance) {
-    add_distance_xy(length, distance) {
+    add_distance_xy(length=[length[0]-0.5*gap, length[1]-0.5*gap], distance=distance) {
         intersection() {
             union() {
                 translate([0, -0.5*connector_length, 0])
@@ -598,8 +602,8 @@ module border_corner(length=[30, 100], distance=border_top_bottom_distance) {
                     rotate([0, 0, 270])
                         fitting(male=true);
             }
-            translate([0, -(length[1]+connector_length), 0])
-                cube([length[0]+connector_length, length[1]+connector_length, height]);
+            translate([0, -(length[1]+connector_length-0.5*gap), 0])
+                cube([length[0]+connector_length-0.5*gap, length[1]+connector_length-0.5*gap, height]);
         }
     }
 }
