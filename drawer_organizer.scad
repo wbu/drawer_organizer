@@ -3,6 +3,8 @@ height = 60;
 width_bottom = 13;
 width_top = 5;
 
+border_top_bottom_distance = [0, 8];
+
 gap = 0.15;
 gap_top = 1;  // overhang needs bigger tolerances
 
@@ -34,6 +36,9 @@ module showcase(space=40) {
         connector_x();
         connector_corner(round=true);
         connector_corner(round=false);
+        border_straight_x();
+        border_straight_y();
+        border_corner();
     }
 }
 
@@ -299,7 +304,6 @@ module divider_bend(length=100, distance=20, radius=50) {
     length_ortho = abs(distance) >= 2*radius ? abs(distance)-2*radius : 0;
     length_round = abs(distance) >= 2*radius ? radius : abs(sin(angle))*radius;
     length_start = 0.5*(length-2*length_round);
-    echo(angle, length_ortho, length_round, length_start);
     assert(length >= 2*length_round, "divider_bend: length too short or radius too big");
     difference() {
         union() {
@@ -395,6 +399,128 @@ module connector_corner(round=true) {
                     }
                 }
             }
+        }
+    }
+}
+
+module add_distance_xy(length, distance) {
+    max_bottom_distance = radius_top <= radius_bottom ? radius_bottom - radius_top : 0;
+    bottom_distance = [min(max_bottom_distance, distance[0]),
+                       min(max_bottom_distance, distance[1])];
+    top_distance = [distance[0] - bottom_distance[0],
+                    distance[1] - bottom_distance[1]];
+    difference() {
+        union() {
+            children();
+            rotate([90, 0, 0]) {
+                translate([0, 0, -top_distance[0]]) {
+                    linear_extrude(height=length[1]+connector_length+top_distance[0]) {
+                        polygon([
+                            [bottom_distance[1], 0],
+                            [0, height],
+                            [-top_distance[1], height],
+                        ]);
+                    }
+                }
+            }
+            rotate([90, 0, 90]) {
+                translate([0, 0, -top_distance[1]]) {
+                    linear_extrude(height=length[0]+connector_length+top_distance[1]) {
+                        polygon([
+                            [-bottom_distance[0], 0],
+                            [0, height],
+                            [top_distance[0], height],
+                        ]);
+                    }
+                }
+            }
+        }
+        rotate([90, 0, 0]) {
+            translate([0, 0, -top_distance[0]]) {
+                linear_extrude(height=length[1]+connector_length+top_distance[0]) {
+                    polygon([
+                        [bottom_distance[1], 0],
+                        [-top_distance[1], height],
+                        [-top_distance[1], 0]
+                    ]);
+                }
+            }
+        }
+        rotate([90, 0, 90]) {
+            translate([0, 0, -top_distance[1]]) {
+                linear_extrude(height=length[0]+connector_length+top_distance[1]) {
+                    polygon([
+                        [-bottom_distance[0], 0],
+                        [top_distance[0], height],
+                        [top_distance[0], 0]
+                    ]);
+                }
+            }
+        }
+    }
+}
+
+module border_straight(length=100, distance=0) {
+    add_distance_xy([0, length], [0, distance]) {
+        intersection() {
+            union() {
+                translate([0, -0.5*connector_length, 0])
+                    profile(length);
+
+                rotate([0, 0, 270])
+                    profile_corner();
+
+                translate([0, -(length+connector_length), 0])
+                    profile_corner();
+
+                translate([0.5*connector_length, 0, 0])
+                    rotate([0, 0, 270])
+                        fitting(male=true);
+                translate([0.5*connector_length, -(length+connector_length), 0])
+                    rotate([0, 0, 270])
+                        fitting(male=true);
+            }
+            translate([0, -(length+connector_length), 0])
+                cube([2*connector_length, length+connector_length, height]);
+        }
+    }
+}
+
+module border_straight_x(width=100) {
+    border_straight(length=width, distance=border_top_bottom_distance[0]);
+}
+
+module border_straight_y(depth=100) {
+    border_straight(length=depth, distance=border_top_bottom_distance[1]);
+}
+
+module border_corner(length=[30, 100], distance=border_top_bottom_distance) {
+    add_distance_xy(length, distance) {
+        intersection() {
+            union() {
+                translate([0, -0.5*connector_length, 0])
+                    profile(length[1]);
+                translate([0.5*connector_length, 0, 0])
+                    rotate([0, 0, 90])
+                        profile(length[0]);
+
+                rotate([0, 0, 270])
+                    profile_corner();
+                translate([0, -(length[1]+connector_length)])
+                    profile_corner();
+                translate([length[0]+connector_length, 0, 0])
+                    rotate([0, 0, 180])
+                        profile_corner();
+
+                translate([connector_length+length[0], -0.5*connector_length, 0])
+                    rotate([0, 0, 180])
+                        fitting(male=true);
+                translate([0.5*connector_length, -(length[1]+connector_length), 0])
+                    rotate([0, 0, 270])
+                        fitting(male=true);
+            }
+            translate([0, -(length[1]+connector_length), 0])
+                cube([length[0]+connector_length, length[1]+connector_length, height]);
         }
     }
 }
