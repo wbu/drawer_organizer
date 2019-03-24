@@ -15,9 +15,10 @@ $fs = 0.1;
 radius_bottom = width_bottom/2;
 radius_top = width_top/2;
 height_linear = height-radius_top;
-connector_length = 2*width_bottom;
+connector_length = 2*max(width_top, width_bottom);
 
-showcase();
+//showcase();
+example();
 
 
 module showcase(space=40) {
@@ -39,7 +40,85 @@ module showcase(space=40) {
         border_straight_x();
         border_straight_y();
         border_corner();
+        group();
+        group();
+        border_corner_flipped();
     }
+}
+
+module example() {
+    border_corner([30,150]);
+    translate([2*(30+connector_length), 0])
+        rotate([0, 0, 270])
+            border_straight(30);
+    translate([3*(30+connector_length), 0])
+        rotate([0, 0, 270])
+            border_straight(30);
+    translate([4*(30+connector_length), 0])
+        rotate([0, 0, 270])
+            border_straight(30);
+    translate([5*(30+connector_length), 0])
+        rotate([0, 0, 270])
+            border_straight(30);
+    translate([6*(30+connector_length), 0])
+        border_corner_flipped([30,150]);
+    translate([0, -(150+30+2*connector_length)])
+        scale([1, -1, 1])
+            border_corner([3*30+2*connector_length, 30]);
+    translate([6*(30+connector_length), -(150+30+2*connector_length)])
+        scale([1, -1, 1])
+            border_corner_flipped([3*30+2*connector_length, 30]);
+
+    translate([1*(30+connector_length), -0.5*connector_length])
+        divider(100);
+    translate([2*(30+connector_length), -0.5*connector_length])
+        divider(100);
+    translate([3*(30+connector_length), -0.5*connector_length])
+        divider(100);
+    translate([4*(30+connector_length), -0.5*connector_length])
+        divider(150);
+    translate([5*(30+connector_length), -0.5*connector_length])
+        divider(150);
+
+    translate([1*(30+connector_length), -(100 + connector_length)])
+        connector_corner();
+    translate([2*(30+connector_length), -(100 + connector_length)])
+        rotate([0, 0, 270])
+            connector_t();
+    translate([3*(30+connector_length), -(100 + connector_length)])
+        connector_t();
+
+    translate([1*(30+connector_length)+0.5*connector_length, -(100 + connector_length)])
+        rotate([0, 0, 90])
+            divider(30);
+    translate([2*(30+connector_length)+0.5*connector_length, -(100 + connector_length)])
+        rotate([0, 0, 90])
+            divider(30);
+    translate([0.5*connector_length, -(150 + connector_length)])
+        rotate([0, 0, 90])
+            divider(3*30+2*connector_length);
+    translate([3*(30+connector_length)+0.5*connector_length, -(150 + connector_length)])
+        rotate([0, 0, 90])
+            divider(30);
+    translate([4*(30+connector_length)+0.5*connector_length, -(150 + connector_length)])
+        rotate([0, 0, 90])
+            divider(30);
+    translate([5*(30+connector_length)+0.5*connector_length, -(150 + connector_length)])
+        rotate([0, 0, 90])
+            divider(30);
+    translate([3*(30+connector_length), -(100 + 1.5*connector_length)])
+        divider(50-connector_length);
+    translate([3*(30+connector_length), -(150 + 1.5*connector_length)])
+        divider(30);
+
+    translate([3*(30+connector_length), -(150 + connector_length)])
+        connector_x();
+    translate([4*(30+connector_length), -(150 + connector_length)])
+        rotate([0, 0, 270])
+            connector_t();
+    translate([5*(30+connector_length), -(150 + connector_length)])
+        rotate([0, 0, 270])
+            connector_t();
 }
 
 module profile_shape() {
@@ -523,4 +602,9 @@ module border_corner(length=[30, 100], distance=border_top_bottom_distance) {
                 cube([length[0]+connector_length, length[1]+connector_length, height]);
         }
     }
+}
+
+module border_corner_flipped(length=[30, 100], distance=border_top_bottom_distance) {
+    scale([-1, 1, 1])
+        border_corner(length=length, distance=distance);
 }
