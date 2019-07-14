@@ -1,115 +1,147 @@
-// global design parameters
-height = 70;
-width_bottom = 13;
+/* [Design Parameters] */
+part = "showcase";  // [showcase:Show All Parts,divider:Straight Divider,divider_lowered:Divider With Lowered Section,divider_bend_right:Divider With Right Bend, divider_bend_left:Divider With Left Bend,connector_zero:Zero Length Straight Connector,connector_straight:Straight Connector,connector_t:Edgy T-Connector,connector_t_round:Round T-Connector,connector_x:Edgy X-Connector,connector_x_round:Round X-Connector,connector_corner_edgy:Edgy Corner Connector,connector_corner:Corner Connector,connector_corner_round:Round Corner Connector,divider_border:Border Straight Divider,connector_zero_border:Border Zero Length Straight Connector,connector_straight_border:Border Straight Connector,connector_t_border:Border Edgy T-Connector,connector_t_round_border:Border Round T-Connector,connector_corner_edgy_border:Border Edgy Corner Connector,connector_corner_border:Border Corner Connector,connector_corner_round_border:Border Round Corner Connector]
+
+height = 50;
+width_bottom = 12;
 width_top = 5;
+border_overhang = 13;
 
-border_overhang = 17;
+divider_lengths = [18, 36, 54, 72, 90, 108, 126, 144, 162, 180];
 
+/* [Advanced] */
+// size of connector pieces relative to width settings above
+connector_length_factor = 1.5;
+// special divider can cause long rendering times and may be broken for certain parameter combinations
+create_special_divider = false;  // [true:Create, false:Don't Create]
+// radius for bending the bend divider relative to divider length
+bend_radius_factor = 0.5;
+// amount of displacement for bend dividers
+bend_distance = 18;
+// radius for lowering the lowered divider on one side relative to divider length
+lowered_radius1_factor = 0.4;
+// radius for lowering the lowered divider on the other side relative to divider length
+lowered_radius2_factor = 0.08;
+
+/* [Tolerances] */
+// Horizontal gap between parts
 gap = 0.15;
-gap_top = 1;  // overhang needs bigger tolerances
+// Vertical gap between parts
+gap_top = 0.8;
 
 $fa = 5;
 $fs = 0.1;
+// Space between dividers and parts in showcase
+line_up_space = 40;
 
+/* [Hidden] */
 // derived variables
 radius_bottom = width_bottom/2;
 radius_top = width_top/2;
 height_linear = height-radius_top;
-connector_length = 1.5*max(width_top, width_bottom);
+connector_length = connector_length_factor*max(width_top, width_bottom);
 
-showcase();
-//printjob();
 
-module showcase(space=40) {
+if (part == "showcase")
+    showcase();
+else if (part == "divider") {
+    for (i = [0:len(divider_lengths)-1])
+        translate([line_up_space*i, 0, 0 ])
+            divider(length=divider_lengths[i]);
+} else if (part == "divider_lowered") {
+    if (create_special_divider)
+        for (i = [0:len(divider_lengths)-1])
+            if (divider_lengths[i] > 3 * connector_length)
+                translate([line_up_space*i, 0, 0 ])
+                    divider_lowered(length=divider_lengths[i]);
+} else if (part == "divider_bend_right") {
+    if (create_special_divider)
+        for (i = [0:len(divider_lengths)-1])
+            translate([line_up_space*i, 0, 0 ])
+                divider_bend(length=divider_lengths[i], distance=-20);
+} else if (part == "divider_bend_left") {
+    if (create_special_divider)
+        for (i = [0:len(divider_lengths)-1])
+            translate([line_up_space*i, 0, 0 ])
+                divider_bend(length=divider_lengths[i]);
+} else if (part == "connector_zero")
+    connector_zero();
+else if (part == "connector_straight")
+    connector_straight();
+else if (part == "connector_t")
+    connector_t(round=false);
+else if (part == "connector_t_round")
+    connector_t(round=true);
+else if (part == "connector_x")
+    connector_x(round=false);
+else if (part == "connector_x_round")
+    connector_x(round=true);
+else if (part == "connector_corner_edgy")
+    connector_corner(round_outside=false, round_inside=false);
+else if (part == "connector_corner")
+    connector_corner(round_outside=false, round_inside=true);
+else if (part == "connector_corner_round")
+    connector_corner(round_outside=true, round_inside=true);
+else if (part == "divider_border")
+    divider(border=true);
+else if (part == "connector_zero_border")
+    connector_zero(border=true);
+else if (part == "connector_straight_border")
+    connector_straight(border=true);
+else if (part == "connector_t_border")
+    connector_t(round=false, border=true);
+else if (part == "connector_t_round_border")
+    connector_t(round=true, border=true);
+else if (part == "connector_corner_edgy_border")
+    connector_corner(round_outside=false, round_inside=false, border=true);
+else if (part == "connector_corner_border")
+    connector_corner(round_outside=false, round_inside=true, border=true);
+else if (part == "connector_corner_round_border")
+    connector_corner(round_outside=true, round_inside=true, border=true);
+else
+    assert(false, "invalid part");
+
+module showcase() {
     module line_up(space) {
        for (i = [0 : 1 : $children-1])
          translate([space[0]*i, space[1]*i, 0 ]) children(i);
     }
-    line_up([space,0]) {
-        divider_bend(distance=-20);
-        divider_bend();
-        divider_lowered();
+
+    line_up([line_up_space,0]) {
+        if (create_special_divider)
+            divider_bend(distance=-20);
+        if (create_special_divider)
+            divider_bend();
+        if (create_special_divider)
+            divider_lowered();
         divider();
         connector_zero();
         connector_straight();
-        line_up([0,-space]) {
+        line_up([0,-line_up_space]) {
             connector_t(round=true);
             connector_t(round=false);
         }
-        line_up([0,-space]) {
+        line_up([0,-line_up_space]) {
             connector_x(round=true);
             connector_x(round=false);
         }
-        line_up([0,-space]) {
-            connector_corner(round=true);
-            connector_corner(round=false);
+        line_up([0,-line_up_space]) {
+            connector_corner(round_outside=false, round_inside=false);
+            connector_corner(round_outside=true, round_inside=true);
+            connector_corner(round_outside=false, round_inside=true);
         }
         group();
         divider(border=true);
         connector_zero(border=true);
         connector_straight(border=true);
-        line_up([0,-space]) {
-            connector_corner(round=true, border=true);
-            connector_corner(round=false, border=true);
-        }
-        group();
-        line_up([0,-space]) {
+        line_up([0,-line_up_space]) {
             connector_t(round=true, border=true);
             connector_t(round=false, border=true);
         }
-    }
-}
-
-module printjob(space=45) {
-    module line_up(space) {
-       for (i = [0 : 1 : $children-1])
-         translate([space[0]*i, space[1]*i, 0]) children(i);
-    }
-    line_up([space,0]) {
-/*
-        divider(length=50);
-        divider(length=100+connector_length);
-        divider(length=170-connector_length);
-        connector_zero();
-        connector_straight();
-        connector_t();
-        connector_x();
-        connector_corner(round=true);
-        divider(length=50, border=true);
-        connector_zero(border=true);
-        connector_straight(border=true);
-        connector_corner(round=false, border=true);
-        group();
-        connector_t(border=true);
-*/
-/*
-        divider(length=50);
-        divider(length=77);
-        divider(length=170-connector_length, border=true);
-        divider(length=40, border=true);
-        divider(length=100+connector_length, border=true);
-        connector_straight(border=true);
-        connector_corner(round=false, border=true);
-        group();
-        connector_t(border=true);
-*/
-/*
-        connector_straight();
-        divider(length=170-connector_length);
-        divider(length=79);
-        divider(length=112);
-        connector_t();
-        divider(length=79, border=true);
-        connector_t(border=true);
-*/
-        divider(length=79);
-        divider(length=50);  // 3x
-        divider(length=150+2*connector_length); // 4x
-        divider(length=150+2*connector_length, border=true); // 2x
-        connector_t();  // 3x
-        connector_x();
-        group();
-        connector_t(border=true); // 2x
+        line_up([0,-line_up_space]) {
+            connector_corner(round_outside=false, round_inside=false, border=true);
+            connector_corner(round_outside=true, round_inside=true, border=true);
+            connector_corner(round_outside=false, round_inside=true, border=true);
+        }
     }
 }
 
@@ -220,7 +252,10 @@ module divider(length=100, border=false) {
     }
 }
 
-module divider_lowered(length=100, lower=0.5, radius1=40, radius2=8) {
+module divider_lowered(length=100, lower=0.5, radius1_factor=lowered_radius1_factor,
+                       radius2_factor=lowered_radius2_factor) {
+    radius1 = length*radius1_factor;
+    radius2 = length*radius2_factor;
     assert(radius1 >= radius_top, "divider_lowered: radius1 must be greater than width_top/2!");
     assert(radius2 >= radius_top, "divider_lowered: radius2 must be greater than width_top/2!");
 
@@ -352,7 +387,8 @@ module divider_lowered(length=100, lower=0.5, radius1=40, radius2=8) {
     }
 }
 
-module divider_bend(length=100, distance=20, radius=50) {
+module divider_bend(length=100, distance=bend_distance, radius_factor=bend_radius_factor) {
+    radius = length * radius_factor;
     // more helpful error message for rotate_extrude() error in profile_round()
     assert(radius >= radius_bottom, str("divider_bend: radius (", radius, ") too small, must be >= ", radius_bottom));
     angle = (abs(distance) >= 2*radius ? 90 : acos(1-0.5*abs(distance)/radius))*sign(distance);
@@ -489,27 +525,29 @@ module connector_t(round=true, border=false) {
         connector_t_normal(round=round);
 }
 
-module connector_corner_normal(round=true) {
+module connector_corner_normal(round_outside=true, round_inside=true) {
     border=false;
     union() {
-        profile_corner(round=round, border=border);
+        if (round_inside) {
+            profile_corner(round=round_outside, border=border);
+        }
 
         scale([-1,1,1]) {
             translate([0,0.5*connector_length,0]) {
                 fitting(male=true, border=border);
-                if (!round)
+                if (!round_outside)
                     profile(length=0.5*connector_length, border=border);
             }
         }
         translate([0.5*connector_length,0,0]) {
             rotate([0,0,270]) {
                 fitting(male=true, border=border);
-                if (!round)
+                if (!round_outside)
                     profile(length=0.5*connector_length, border=border);
             }
         }
 
-        if (!round) {
+        if (!round_outside) {
             rotate([0,0,180]) {
                 rotate_extrude(angle=90) {
                     intersection() {
@@ -522,7 +560,7 @@ module connector_corner_normal(round=true) {
     }
 }
 
-module connector_corner_border(round=true) {
+module connector_corner_border(round_outside=true, round_inside=true) {
     border = true;
 
     module side_wall() {
@@ -541,12 +579,14 @@ module connector_corner_border(round=true) {
     }
 
     union() {
-        profile_corner(round=round, border=border);
+        if (round_inside) {
+            profile_corner(round=round_outside, border=border);
+        }
 
         scale([-1,1,1]) {
             translate([0,0.5*connector_length,0]) {
                 fitting(male=true, border=border);
-                if (!round) {
+                if (!round_outside) {
                     side_wall();
                 }
             }
@@ -554,13 +594,13 @@ module connector_corner_border(round=true) {
         translate([0.5*connector_length+border_overhang,-border_overhang,0]) {
             rotate([0,0,270]) {
                 fitting(male=true, border=border);
-                if (!round) {
+                if (!round_outside) {
                     side_wall();
                 }
             }
         }
 
-        if (!round) {
+        if (!round_outside) {
             skew = border_overhang;
             multmatrix(m=[
                 [1,0,-skew/height,skew],
@@ -585,9 +625,9 @@ module connector_corner_border(round=true) {
     }
 }
 
-module connector_corner(round=true, border=false) {
+module connector_corner(round_outside=true, round_inside=true, border=false) {
     if (border)
-        connector_corner_border(round=round);
+        connector_corner_border(round_outside=round_outside, round_inside=round_inside);
     else
-        connector_corner_normal(round=round);
+        connector_corner_normal(round_outside=round_outside, round_inside=round_inside);
 }
