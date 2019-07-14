@@ -1,26 +1,37 @@
-/* [Design Parameters] */
-part = "showcase";  // [showcase:Show All Parts,divider:Straight Divider,divider_lowered:Divider With Lowered Section,divider_bend_right:Divider With Right Bend, divider_bend_left:Divider With Left Bend,connector_zero:Zero Length Straight Connector,connector_straight:Straight Connector,connector_t:Edgy T-Connector,connector_t_round:Round T-Connector,connector_x:Edgy X-Connector,connector_x_round:Round X-Connector,connector_corner_edgy:Edgy Corner Connector,connector_corner:Corner Connector,connector_corner_round:Round Corner Connector,divider_border:Border Straight Divider,connector_zero_border:Border Zero Length Straight Connector,connector_straight_border:Border Straight Connector,connector_t_border:Border Edgy T-Connector,connector_t_round_border:Border Round T-Connector,connector_corner_edgy_border:Border Edgy Corner Connector,connector_corner_border:Border Corner Connector,connector_corner_round_border:Border Round Corner Connector]
+/* [Global Parameters] */
+part = "connector";  // [connector:Connector Parts,divider:Divider Parts,connector_border:Border Connector Parts,divider_border:Border Divider Parts]
 
 height = 50;
 width_bottom = 12;
 width_top = 5;
 border_overhang = 13;
 
-divider_lengths = [18, 36, 54, 72, 90, 108, 126, 144, 162, 180];
+/* [Connector Settings] */
+connector_part = "all";  // [all:All Connectors,connector_zero:Zero Length Straight Connector,connector_straight:Straight Connector,connector_t:Edgy T-Connector,connector_t_round:Round T-Connector,connector_x:Edgy X-Connector,connector_x_round:Round X-Connector,connector_corner_edgy:Edgy Corner Connector,connector_corner:Corner Connector,connector_corner_round:Round Corner Connector]
 
-/* [Advanced] */
-// size of connector pieces relative to width settings above
-connector_length_factor = 1.5;
-// special divider can cause long rendering times and may be broken for certain parameter combinations
-create_special_divider = false;  // [true:Create, false:Don't Create]
+/* [Divider Settings] */
+divider_part = "divider";  // [divider:Straight Divider,divider_lowered:Divider With Lowered Section,divider_bend_right:Divider With Right Bend, divider_bend_left:Divider With Left Bend]
+divider_lengths = [18, 36, 54, 72, 90, 108, 126, 144, 162, 180];
 // radius for bending the bend divider relative to divider length
 bend_radius_factor = 0.5;
 // amount of displacement for bend dividers
 bend_distance = 18;
+// height of the lowered divider in the lowered section relative to total height
+lowered_height = 0.5; // [0:0.01:1]
 // radius for lowering the lowered divider on one side relative to divider length
 lowered_radius1_factor = 0.4;
 // radius for lowering the lowered divider on the other side relative to divider length
 lowered_radius2_factor = 0.08;
+
+/* [Border Connector Settings] */
+connector_part_border = "all";  // [all:All Border Connectors,connector_zero_border:Border Zero Length Straight Connector,connector_straight_border:Border Straight Connector,connector_t_border:Border Edgy T-Connector,connector_t_round_border:Border Round T-Connector,connector_corner_edgy_border:Border Edgy Corner Connector,connector_corner_border:Border Corner Connector,connector_corner_round_border:Border Round Corner Connector]
+
+/* [Border Divider Settings] */
+divider_lengths_border = [18, 36, 54, 72, 90, 108, 126, 144, 162, 180];
+
+/* [Advanced] */
+// size of connector pieces relative to width settings above
+connector_length_factor = 1.5;
 
 /* [Tolerances] */
 // Horizontal gap between parts
@@ -30,7 +41,7 @@ gap_top = 0.8;
 
 $fa = 5;
 $fs = 0.1;
-// Space between dividers and parts in showcase
+// Space between dividers and connectors, when multiple pieces are in one .stl file
 line_up_space = 40;
 
 /* [Hidden] */
@@ -41,106 +52,106 @@ height_linear = height-radius_top;
 connector_length = connector_length_factor*max(width_top, width_bottom);
 
 
-if (part == "showcase")
-    showcase();
-else if (part == "divider") {
-    for (i = [0:len(divider_lengths)-1])
-        translate([line_up_space*i, 0, 0 ])
-            divider(length=divider_lengths[i]);
-} else if (part == "divider_lowered") {
-    if (create_special_divider)
-        for (i = [0:len(divider_lengths)-1])
-            if (divider_lengths[i] > 3 * connector_length)
-                translate([line_up_space*i, 0, 0 ])
-                    divider_lowered(length=divider_lengths[i]);
-} else if (part == "divider_bend_right") {
-    if (create_special_divider)
-        for (i = [0:len(divider_lengths)-1])
-            translate([line_up_space*i, 0, 0 ])
-                divider_bend(length=divider_lengths[i], distance=-20);
-} else if (part == "divider_bend_left") {
-    if (create_special_divider)
-        for (i = [0:len(divider_lengths)-1])
-            translate([line_up_space*i, 0, 0 ])
-                divider_bend(length=divider_lengths[i]);
-} else if (part == "connector_zero")
-    connector_zero();
-else if (part == "connector_straight")
-    connector_straight();
-else if (part == "connector_t")
-    connector_t(round=false);
-else if (part == "connector_t_round")
-    connector_t(round=true);
-else if (part == "connector_x")
-    connector_x(round=false);
-else if (part == "connector_x_round")
-    connector_x(round=true);
-else if (part == "connector_corner_edgy")
-    connector_corner(round_outside=false, round_inside=false);
-else if (part == "connector_corner")
-    connector_corner(round_outside=false, round_inside=true);
-else if (part == "connector_corner_round")
-    connector_corner(round_outside=true, round_inside=true);
+if (part == "connector")
+    connector_parts(connector_part);
+else if (part == "divider")
+    divider_parts(divider_part, divider_lengths);
+else if (part == "connector_border")
+    connector_parts_border(connector_part_border);
 else if (part == "divider_border")
-    divider(border=true);
-else if (part == "connector_zero_border")
-    connector_zero(border=true);
-else if (part == "connector_straight_border")
-    connector_straight(border=true);
-else if (part == "connector_t_border")
-    connector_t(round=false, border=true);
-else if (part == "connector_t_round_border")
-    connector_t(round=true, border=true);
-else if (part == "connector_corner_edgy_border")
-    connector_corner(round_outside=false, round_inside=false, border=true);
-else if (part == "connector_corner_border")
-    connector_corner(round_outside=false, round_inside=true, border=true);
-else if (part == "connector_corner_round_border")
-    connector_corner(round_outside=true, round_inside=true, border=true);
+    divider_parts_border(divider_lengths_border);
 else
     assert(false, "invalid part");
 
-module showcase() {
-    module line_up(space) {
-       for (i = [0 : 1 : $children-1])
-         translate([space[0]*i, space[1]*i, 0 ]) children(i);
-    }
 
-    line_up([line_up_space,0]) {
-        if (create_special_divider)
-            divider_bend(distance=-20);
-        if (create_special_divider)
-            divider_bend();
-        if (create_special_divider)
-            divider_lowered();
-        divider();
+module line_up(space) {
+   for (i = [0 : 1 : $children-1])
+     translate([space[0]*i, space[1]*i, 0 ]) children(i);
+}
+
+module connector_parts(part) {
+    if (part == "connector_zero")
         connector_zero();
+    else if (part == "connector_straight")
         connector_straight();
-        line_up([0,-line_up_space]) {
-            connector_t(round=true);
+    else if (part == "connector_t")
+        connector_t(round=false);
+    else if (part == "connector_t_round")
+        connector_t(round=true);
+    else if (part == "connector_x")
+        connector_x(round=false);
+    else if (part == "connector_x_round")
+        connector_x(round=true);
+    else if (part == "connector_corner_edgy")
+        connector_corner(round_outside=false, round_inside=false);
+    else if (part == "connector_corner")
+        connector_corner(round_outside=false, round_inside=true);
+    else if (part == "connector_corner_round")
+        connector_corner(round_outside=true, round_inside=true);
+    else {  // "all"
+        line_up([line_up_space, 0]) {
+            connector_zero();
+            connector_straight();
             connector_t(round=false);
-        }
-        line_up([0,-line_up_space]) {
-            connector_x(round=true);
+            connector_t(round=true);
             connector_x(round=false);
-        }
-        line_up([0,-line_up_space]) {
+            connector_x(round=true);
             connector_corner(round_outside=false, round_inside=false);
-            connector_corner(round_outside=true, round_inside=true);
             connector_corner(round_outside=false, round_inside=true);
+            connector_corner(round_outside=true, round_inside=true);
         }
-        group();
-        divider(border=true);
+    }
+}
+
+module divider_parts(part, lengths) {
+    for (i = [0:len(lengths)-1]) {
+        translate([line_up_space*i, 0, 0 ]) {
+            if (part == "divider") {
+                divider(length=lengths[i]);
+            } else if (part == "divider_lowered") {
+                if (lengths[i] > 3 * connector_length)
+                    divider_lowered(length=lengths[i]);
+            } else if (part == "divider_bend_right") {
+                divider_bend(length=lengths[i], distance=-20);
+            } else if (part == "divider_bend_left") {
+                divider_bend(length=lengths[i]);
+            }
+        }
+    }
+}
+
+module connector_parts_border(part) {
+    if (part == "connector_zero_border")
         connector_zero(border=true);
+    else if (part == "connector_straight_border")
         connector_straight(border=true);
-        line_up([0,-line_up_space]) {
-            connector_t(round=true, border=true);
+    else if (part == "connector_t_border")
+        connector_t(round=false, border=true);
+    else if (part == "connector_t_round_border")
+        connector_t(round=true, border=true);
+    else if (part == "connector_corner_edgy_border")
+        connector_corner(round_outside=false, round_inside=false, border=true);
+    else if (part == "connector_corner_border")
+        connector_corner(round_outside=false, round_inside=true, border=true);
+    else if (part == "connector_corner_round_border")
+        connector_corner(round_outside=true, round_inside=true, border=true);
+    else {  // all
+        line_up([line_up_space, 0]) {
+            connector_zero(border=true);
+            connector_straight(border=true);
             connector_t(round=false, border=true);
-        }
-        line_up([0,-line_up_space]) {
+            connector_t(round=true, border=true);
             connector_corner(round_outside=false, round_inside=false, border=true);
-            connector_corner(round_outside=true, round_inside=true, border=true);
             connector_corner(round_outside=false, round_inside=true, border=true);
+            connector_corner(round_outside=true, round_inside=true, border=true);
+        }
+    }
+}
+
+module divider_parts_border(lengths) {
+    for (i = [0:len(lengths)-1]) {
+        translate([line_up_space*i, 0, 0 ]) {
+            divider(border=true, length=lengths[i]);
         }
     }
 }
@@ -252,7 +263,7 @@ module divider(length=100, border=false) {
     }
 }
 
-module divider_lowered(length=100, lower=0.5, radius1_factor=lowered_radius1_factor,
+module divider_lowered(length=100, lower=lowered_height, radius1_factor=lowered_radius1_factor,
                        radius2_factor=lowered_radius2_factor) {
     radius1 = length*radius1_factor;
     radius2 = length*radius2_factor;
