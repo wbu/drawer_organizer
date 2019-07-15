@@ -605,7 +605,7 @@ module connector_corner_border(round_outside=true, round_inside=true) {
         intersection() {
             profile(length=0.5*connector_length+border_overhang, border=border);
             skew = border_overhang;
-            translate([-(0.5*connector_length+border_overhang)+radius_bottom,0,0]) {
+            translate([-(0.5*connector_length+border_overhang)+0.5*radius_bottom,0,0]) {
                 scale([1,-1,1]) {
                     size = 0.5*connector_length;
                     linear_extrude(height=height, scale=(size+skew)/size) {
