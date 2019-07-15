@@ -69,6 +69,33 @@ module line_up(space) {
      translate([space[0]*i, space[1]*i, 0 ]) children(i);
 }
 
+// from thehans: http://forum.openscad.org/rotate-extrude-angle-always-360-tp19035p19040.html
+module rotate_extrude2(angle=360, size=1000) {
+
+    module angle_cut(angle,size=1000) {
+        x = size*cos(angle/2);
+        y = size*sin(angle/2);
+        translate([0,0,-size])
+            linear_extrude(2*size)
+                polygon([[0,0],[x,y],[x,size],[-size,size],[-size,-size],[x,-size],[x,-y]]);
+    }
+
+    // support for angle parameter in rotate_extrude was added after release 2015.03
+    // Thingiverse customizer is still on 2015.03
+    angleSupport = (version_num() > 20150399) ? true : false; // Next openscad releases after 2015.03.xx will have support angle parameter
+    // Using angle parameter when possible provides huge speed boost, avoids a difference operation
+
+    if (angleSupport) {
+        rotate_extrude(angle=angle)
+        children();
+    } else {
+        rotate([0,0,angle/2]) difference() {
+            rotate_extrude() children();
+            angle_cut(angle, size);
+        }
+    }
+}
+
 module connector_parts(part) {
     if (part == "connector_zero")
         connector_zero();
@@ -183,7 +210,7 @@ module profile(length=150, border=false) {
 module profile_round(radius, angle=90, border=false) {
     border_overhang = border ? border_overhang : 0;
     translate([-radius-border_overhang,0]) {
-        rotate_extrude(angle=angle) {
+        rotate_extrude2(angle=angle) {
             translate([radius+border_overhang,0])
                 profile_shape(border=border);
         }
@@ -285,7 +312,7 @@ module divider_lowered(length=100, lower=lowered_height, radius1_factor=lowered_
     module round_edge(radius, angle, length_round, height_round, height_ortho) {
         translate([0, 0, height_linear-radius])
             rotate([0,-90,180])
-                rotate_extrude(angle=angle)
+                rotate_extrude2(angle=angle)
                     translate([radius, 0])
                         circle(r=radius_top);
         if (height_ortho > 0) {
@@ -295,7 +322,7 @@ module divider_lowered(length=100, lower=lowered_height, radius1_factor=lowered_
         }
         translate([0, -2*length_round, height-height_lower+radius-radius_top])
             rotate([0,90,0])
-                rotate_extrude(angle=angle)
+                rotate_extrude2(angle=angle)
                     translate([radius, 0])
                         circle(r=radius_top);
     }
@@ -560,7 +587,7 @@ module connector_corner_normal(round_outside=true, round_inside=true) {
 
         if (!round_outside) {
             rotate([0,0,180]) {
-                rotate_extrude(angle=90) {
+                rotate_extrude2(angle=90) {
                     intersection() {
                         profile_shape(border=border);
                         square([max(radius_bottom, radius_top), height]);
@@ -619,7 +646,7 @@ module connector_corner_border(round_outside=true, round_inside=true) {
                 [0,0,1,0],
                 [0,0,0,1]]) {
                 rotate([0,0,180]) {
-                    rotate_extrude(angle=90) {
+                    rotate_extrude2(angle=90) {
                         union() {
                             square([radius_top, height_linear]);
                             translate([0,height_linear]) {
