@@ -4,6 +4,9 @@ part = "connector";  // [connector:Connector Parts,divider:Divider Parts,connect
 height = 50;
 width_bottom = 12;
 width_top = 5;
+// size of connector pieces
+connector_length = 18;
+// use overhang for border pieces, in case your (side-) walls are not fully vertical
 border_overhang = 13;
 
 /* [Connector Settings] */
@@ -28,10 +31,6 @@ connector_part_border = "all";  // [all:All Border Connectors,connector_zero_bor
 
 /* [Border Divider Settings] */
 divider_lengths_border = [18, 36, 54, 72, 90, 108, 126, 144, 162, 180];
-
-/* [Advanced] */
-// size of connector pieces
-connector_length = 18;
 
 /* [Tolerances] */
 // Horizontal gap between parts
