@@ -30,8 +30,8 @@ connector_part_border = "all";  // [all:All Border Connectors,connector_zero_bor
 divider_lengths_border = [18, 36, 54, 72, 90, 108, 126, 144, 162, 180];
 
 /* [Advanced] */
-// size of connector pieces relative to width settings above
-connector_length_factor = 1.5;
+// size of connector pieces
+connector_length = 18;
 
 /* [Tolerances] */
 // Horizontal gap between parts
@@ -49,7 +49,6 @@ line_up_space = 40;
 radius_bottom = width_bottom/2;
 radius_top = width_top/2;
 height_linear = height-radius_top;
-connector_length = connector_length_factor*max(width_top, width_bottom);
 
 
 if (part == "connector")
