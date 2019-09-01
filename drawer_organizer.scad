@@ -69,7 +69,6 @@ module line_up(space) {
 
 // from thehans: http://forum.openscad.org/rotate-extrude-angle-always-360-tp19035p19040.html
 module rotate_extrude2(angle=360, size=1000) {
-
     module angle_cut(angle,size=1000) {
         x = size*cos(angle/2);
         y = size*sin(angle/2);
@@ -87,7 +86,8 @@ module rotate_extrude2(angle=360, size=1000) {
         rotate_extrude(angle=angle)
         children();
     } else {
-        rotate([0,0,angle/2]) difference() {
+        non_negative_angle = angle >= 0 ? angle : 360 + angle;
+        rotate([0,0,non_negative_angle/2]) difference() {
             rotate_extrude() children();
             angle_cut(angle, size);
         }
