@@ -137,7 +137,7 @@ module divider_parts(part, lengths) {
                 if (lengths[i] > 3 * connector_length)
                     divider_lowered(length=lengths[i]);
             } else if (part == "divider_bend_right") {
-                divider_bend(length=lengths[i], distance=-20);
+                divider_bend(length=lengths[i], distance=-bend_distance);
             } else if (part == "divider_bend_left") {
                 divider_bend(length=lengths[i]);
             }
