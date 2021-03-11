@@ -483,7 +483,7 @@ module connector_t_border(round=true) {
     connector_straight(border=true);
     rotate([0,0,90]) {
         translate([0,0.5*connector_length+border_overhang,0]) {
-            fitting(male=true);
+            fitting(male=true, border=true);
             intersection() {
                 profile(connector_length+border_overhang);
                 skew = border_overhang;
