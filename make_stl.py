@@ -11,6 +11,7 @@ OUTPUT_TYPE = "stl" # openscad also supports "amf", "3mf" and others
 base_length = 18
 divider_lengths = list(range(base_length, 11*base_length, base_length))
 bend_distances = list(range(base_length, 6*base_length, base_length))
+border_overhangs = [0, 13]
 parts = {
     #"connector_all": {},
     "connector_zero": {},
@@ -34,16 +35,16 @@ parts = {
         "divider_length": divider_lengths,
         "bend_distance": bend_distances},
     #"connector_border_all": {},
-    "connector_zero_border": {"border_overhang": [0, 13]},
-    "connector_straight_border": {"border_overhang": [0, 13]},
-    "connector_t_border": {"border_overhang": [0, 13]},
-    "connector_t_round_border": {"border_overhang": [0, 13]},
-    "connector_corner_edgy_border": {"border_overhang": [0, 13]},
-    "connector_corner_border": {"border_overhang": [0, 13]},
-    "connector_corner_round_border": {"border_overhang": [0, 13]},
+    "connector_zero_border": {"border_overhang": border_overhangs},
+    "connector_straight_border": {"border_overhang": border_overhangs},
+    "connector_t_border": {"border_overhang": border_overhangs},
+    "connector_t_round_border": {"border_overhang": border_overhangs},
+    "connector_corner_edgy_border": {"border_overhang": border_overhangs},
+    "connector_corner_border": {"border_overhang": border_overhangs},
+    "connector_corner_round_border": {"border_overhang": border_overhangs},
     "divider_border": {
         "divider_length": divider_lengths,
-        "border_overhang": [0, 13]},
+        "border_overhang": border_overhangs},
 }
 
 designs = [
