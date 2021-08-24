@@ -8,6 +8,8 @@ width_top = 5;
 connector_length = 18;
 // use overhang for border pieces, in case your (side-) walls are not fully vertical
 border_overhang = 13;
+// adds a little bump on the connector, that locks pieces in the right position
+snap_connection_size = 1;
 
 /* [Divider Settings] */
 divider_length = 72;
@@ -214,29 +216,41 @@ module fitting(male=true, border=false) {
     gap_top = male ? gap_top : 0;
     connector_length = radius_bottom;
     // For crazy people, that choose width_top > width_bottom. Otherwise pieces
-    // cannot be sticked together. Such a design actually looks quite nice ;)
+    // cannot be stuck together. Such a design actually looks quite nice ;)
     radius_top = radius_top <= radius_bottom ? radius_top : radius_bottom;
     radius_top_gap = radius_top+(radius_bottom-radius_top)*gap_top/height_linear;
     skew = (radius_bottom-radius_top)/2 + border_overhang;
     radius_bottom = border ? (radius_top+radius_bottom)/2 : radius_bottom;
+    // snap connection variables
+    snap_height_factor = 0.2;
+    snap_height = height_linear * snap_height_factor;
+    snap_radius = 0.3 * (radius_bottom * (1-snap_height_factor) +
+                         radius_top * snap_height_factor) +
+                  snap_connection_size;
     multmatrix(m=[
         [1,0,border?skew/height:0,border?-skew:0],
         [0,1,0,0],
         [0,0,1,0],
         [0,0,0,1]]) {
-        linear_extrude(height=height_linear-gap_top, scale=radius_top_gap/radius_bottom) {
-            polygon([
-                [-0.3*radius_bottom+gap, 0],
-                [0.3*radius_bottom-gap, 0],
-                [0.5*radius_bottom-gap, connector_length],
-                [-0.5*radius_bottom+gap, connector_length]
-            ]);
-            translate([0,connector_length]) {
-                circle(r=0.6*radius_bottom-gap);
-                // add "air channel" for female piece
-                if (!male)
-                    translate([-0.1*radius_bottom,0])
-                        square([0.2*radius_bottom, radius_bottom]);
+        union() {
+            linear_extrude(height=height_linear-gap_top, scale=radius_top_gap/radius_bottom) {
+                polygon([
+                    [-0.3*radius_bottom+gap, 0],
+                    [0.3*radius_bottom-gap, 0],
+                    [0.5*radius_bottom-gap, connector_length],
+                    [-0.5*radius_bottom+gap, connector_length]
+                ]);
+                translate([0,connector_length]) {
+                    circle(r=0.6*radius_bottom-gap);
+                    // add "air channel" for female piece
+                    if (!male)
+                        translate([-0.1*radius_bottom,0])
+                            square([0.2*radius_bottom, radius_bottom]);
+                }
+            }
+            // snap connection
+            translate([0,0,snap_height]) rotate([-90,0,0]) {
+                cylinder(h=connector_length, r1=snap_radius - gap, r2=0.8*snap_radius - gap);
             }
         }
     }
