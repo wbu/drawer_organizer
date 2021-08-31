@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create STL files with single objects from drawer_organizer.scad."""
+"""Create STL files with single parts from drawer_organizer.scad."""
 import itertools
 import subprocess
 import os
@@ -11,7 +11,7 @@ OUTPUT_TYPE = "stl" # openscad also supports "amf", "3mf" and others
 base_length = 18
 divider_lengths = list(range(base_length, 11*base_length, base_length))
 bend_distances = list(range(base_length, 6*base_length, base_length))
-border_overhangs = [0, 13]
+border_overhangs = [0, 7, 13]
 parts = {
     #"connector_all": {},
     "connector_zero": {},
@@ -48,6 +48,7 @@ parts = {
 }
 
 designs = [
+    {"height": 25},
     {"height": 40},
     {"height": 50},
     {"height": 60},
