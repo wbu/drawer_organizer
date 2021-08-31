@@ -249,9 +249,10 @@ module fitting(male=true, border=false) {
                 }
             }
             // snap connection
-            translate([0,0,snap_height]) rotate([-90,0,0]) {
-                cylinder(h=connector_length, r1=snap_radius - gap, r2=0.8*snap_radius - gap);
-            }
+            if (snap_connection_size > 0)
+                translate([0,0,snap_height])
+                    rotate([-90,0,0])
+                        cylinder(h=connector_length, r1=snap_radius - gap, r2=0.8*snap_radius - gap);
         }
     }
 }
