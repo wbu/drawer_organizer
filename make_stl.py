@@ -9,7 +9,7 @@ EXECUTABLE = "openscad-nightly"
 OUTPUT_TYPE = "stl" # openscad also supports "amf", "3mf" and others
 
 base_length = 18
-divider_lengths = list(range(base_length, 11*base_length, base_length))
+divider_lengths = list(range(2*base_length, 11*base_length, base_length))
 bend_distances = list(range(base_length, 6*base_length, base_length))
 border_overhangs = [0, 7, 13]
 parts = {
@@ -26,7 +26,7 @@ parts = {
     "divider": {
         "divider_length": divider_lengths},
     "divider_lowered": {
-        "divider_length": divider_lengths[3:]},
+        "divider_length": divider_lengths[2:]},
     # can easily be created by mirroring in the slicer
     #"divider_bend_right": {
     #    "divider_length": divider_lengths,
