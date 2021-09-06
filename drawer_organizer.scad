@@ -411,22 +411,40 @@ module divider_bend(length=100, distance=bend_distance, radius_factor=bend_radiu
     length_round = abs(distance) >= 2*radius ? radius : abs(sin(angle))*radius;
     length_start = 0.5*(length-2*length_round);
     assert(length >= 2*length_round, "divider_bend: length too short or radius too big");
+    epsilon_angle = $fa * sign(angle);
     difference() {
         union() {
+            // initial straight part and final straight part
             if (length_start > 0) {
                 profile(length_start);
                 translate([distance,length_start-length])
                     profile(length_start);
             }
+            // bend profile in one direction
             translate([0,-length_start])
                 rotate([0,0,180])
                     profile_round(radius=radius*sign(angle), angle=angle);
+            // bend profile in other direction
             translate([distance, length_start-length])
                 profile_round(radius=radius*sign(angle), angle=angle);
-            if (length_ortho > 0) {
-                translate([angle>0?radius:-length_ortho-radius,-0.5*length])
-                    rotate([0,0,90])
-                        profile(length_ortho);
+            // straight middle part
+            // In case the middle part is not needed, this is a tiny little glue piece
+            // between the previous two parts. It fixes an issue with broken geometry, that
+            // is caused by rounding errors. Openscad does not like to union pieces, that
+            // only touch. So far this is the only place where I experienced actual errors
+            // when union exactly touching pieces.
+            hull() {
+                translate([0,-length_start])
+                    rotate([0,0,180])
+                        translate([-radius*sign(angle),0,0])
+                            rotate([0,0,angle])
+                                translate([radius*sign(angle),0,0])
+                                    profile_round(radius=radius*sign(angle), angle=-epsilon_angle);
+                translate([distance, length_start-length])
+                    translate([-radius*sign(angle),0,0])
+                        rotate([0,0,angle])
+                            translate([radius*sign(angle),0,0])
+                                profile_round(radius=radius*sign(angle), angle=-epsilon_angle);
             }
         }
         rotate([0,0,180])
