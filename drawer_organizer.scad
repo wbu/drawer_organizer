@@ -40,6 +40,7 @@ line_up_space = 40;
 radius_bottom = width_bottom/2;
 radius_top = width_top/2;
 height_linear = height-radius_top;
+difference_tolerance = .01;
 
 
 parts(part);
@@ -200,9 +201,9 @@ module profile_corner(round=false, border=false) {
                 }
             }
             radius_bottom2 = border ? (radius_bottom-radius_top)/2 : radius_bottom;
-            translate([0.5*connector_length+border_overhang,0.5*connector_length,0]) {
+            translate([0.5*connector_length+border_overhang,0.5*connector_length,-difference_tolerance]) {
                 radius = 0.5*connector_length-skew1;
-                linear_extrude(height=height, scale=(radius+skew)/radius) {
+                linear_extrude(height=height+difference_tolerance*2, scale=(radius+skew)/radius) {
                     circle(r=radius);
                 }
             }
@@ -215,6 +216,7 @@ module fitting(male=true, border=false) {
     gap = male ? gap : 0;
     gap_top = male ? gap_top : 0;
     connector_length = radius_bottom;
+    diff_tolerance = male ? 0 : difference_tolerance;
     // For crazy people, that choose width_top > width_bottom. Otherwise pieces
     // cannot be stuck together. Such a design actually looks quite nice ;)
     radius_top = radius_top <= radius_bottom ? radius_top : radius_bottom;
@@ -233,26 +235,28 @@ module fitting(male=true, border=false) {
         [0,0,1,0],
         [0,0,0,1]]) {
         union() {
-            linear_extrude(height=height_linear-gap_top, scale=radius_top_gap/radius_bottom) {
-                polygon([
-                    [-0.3*radius_bottom+gap, 0],
-                    [0.3*radius_bottom-gap, 0],
-                    [0.5*radius_bottom-gap, connector_length],
-                    [-0.5*radius_bottom+gap, connector_length]
-                ]);
-                translate([0,connector_length]) {
-                    circle(r=0.6*radius_bottom-gap);
-                    // add "air channel" for female piece
-                    if (!male)
-                        translate([-0.1*radius_bottom,0])
-                            square([0.2*radius_bottom, radius_bottom]);
-                }
-            }
+            translate([0,0,-diff_tolerance]) {
+		linear_extrude(height=height_linear-gap_top, scale=radius_top_gap/radius_bottom) {
+	                polygon([
+	                    [-0.3*radius_bottom+gap, -diff_tolerance],
+	                    [0.3*radius_bottom-gap, -diff_tolerance],
+	                    [0.5*radius_bottom-gap, connector_length],
+	                    [-0.5*radius_bottom+gap, connector_length]
+	                ]);
+	                translate([0,connector_length]) {
+	                    circle(r=0.6*radius_bottom-gap);
+	                    // add "air channel" for female piece
+	                    if (!male)
+	                        translate([-0.1*radius_bottom,0])
+	                            square([0.2*radius_bottom, radius_bottom]);
+	                }
+	            }
+	    	}
             // snap connection
             if (snap_connection_size > 0)
-                translate([0,0,snap_height])
+                translate([0,diff_tolerance,snap_height])
                     rotate([-90,0,0])
-                        cylinder(h=connector_length, r1=snap_radius - gap, r2=0.8*snap_radius - gap);
+                        cylinder(h=connector_length+diff_tolerance, r1=snap_radius - gap, r2=0.8*snap_radius - gap);
         }
     }
 }
@@ -544,8 +548,8 @@ module connector_t_border(round=true) {
                         profile_corner(round=false, border=false);
                     }
                 }
-                translate([radius_top,-0.5*connector_length,0])
-                    cube([radius_bottom,connector_length,height]);
+                translate([radius_top,-0.5*connector_length-difference_tolerance,-difference_tolerance])
+                    cube([radius_bottom,connector_length+difference_tolerance*2,height+difference_tolerance*2]);
             }
         }
     }
