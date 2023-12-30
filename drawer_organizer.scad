@@ -10,6 +10,14 @@ connector_length = 18;
 border_overhang = 13;
 // adds a little bump on the connector, that locks pieces in the right position
 snap_connection_size = 1;
+// orientation 0 degrees as rendered
+fitting_east_is_male = true;
+// orientation 90 degrees as rendered
+fitting_north_is_male = true;
+// orientation 180 degrees as rendered
+fitting_west_is_male = true;
+// orientation 270 degrees as rendered
+fitting_south_is_male = true;
 
 /* [Divider Settings] */
 divider_length = 72;
@@ -40,7 +48,12 @@ line_up_space = 40;
 radius_bottom = width_bottom/2;
 radius_top = width_top/2;
 height_linear = height-radius_top;
-
+// 0, 90, 180, 270 degrees
+f_EAST = 0;
+f_NORTH = 1;
+f_WEST = 2;
+f_SOUTH = 3;
+fitting_is_male = [fitting_east_is_male, fitting_north_is_male, fitting_west_is_male, fitting_south_is_male];
 
 parts(part);
 
@@ -210,7 +223,13 @@ module profile_corner(round=false, border=false) {
     }
 }
 
+
 module fitting(male=true, border=false) {
+  scale([1, male?1:-1, 1])
+    fitting_male(male, border);
+}
+
+module fitting_male(male=true, border=false) {
     // shrink male piece a little bit
     gap = male ? gap : 0;
     gap_top = male ? gap_top : 0;
@@ -260,9 +279,9 @@ module fitting(male=true, border=false) {
 module divider(length=100, border=false) {
     difference() {
         profile(length=length, border=border);
-        scale([1,-1,1])
-            fitting(male=false, border=border);
+        fitting(male=false, border=border);
         translate([0,-length])
+            scale([1,-1,1])
             fitting(male=false, border=border);
     }
 }
@@ -395,10 +414,16 @@ module divider_lowered(length=100, lower=lowered_height, radius1_factor=lowered_
                 flat_cap(top=false);
             }
         }
-        rotate([0,0,180])
-            fitting(male=false);
-        translate([0,-length])
-            fitting(male=false);
+
+        // This tiny translation offset is to avoid a 2-manifold warning due to coincident faces with CSG modelling.
+        // See, for example, https://www.reddit.com/r/openscad/comments/10omyom/comment/j6hqzse/?utm_source=share&utm_medium=web2x&context=3
+        translate([0,0.0000001])
+            rotate([0,0,180])
+                scale([1,-1,1])
+                    fitting(male=false);
+        translate([0,-length-0.0000001])
+            scale([1,-1,1])
+                fitting(male=false);
     }
 }
 
@@ -448,9 +473,11 @@ module divider_bend(length=100, distance=bend_distance, radius_factor=bend_radiu
             }
         }
         rotate([0,0,180])
-            fitting(male=false);
+            scale([1,-1,1])
+                fitting(male=false);
         translate([distance,-length])
-            fitting(male=false);
+            scale([1,-1,1])
+                fitting(male=false);
     }
 }
 
@@ -464,22 +491,46 @@ module connector_zero(border=false) {
 
 module connector_straight(border=false) {
     translate([0,0.5*connector_length,0]) {
-        union() {
-            profile(length=connector_length, border=border);
-            fitting(male=true, border=border);
+        difference() {
+          connector_straight_male(border);
+          connector_straight_female(border);
+        }
+    }
+
+    module connector_straight_male(border=false) {
+        profile(length=connector_length, border=border);
+        if (fitting_is_male[f_NORTH])
+            fitting(male=fitting_is_male[f_NORTH], border=border);
+        if (fitting_is_male[f_SOUTH])
             translate([0,-connector_length,0])
                 scale([1,-1,1])
-                    fitting(male=true, border=border);
-        }
+                    fitting(male=fitting_is_male[f_SOUTH], border=border);
+    }
+
+    module connector_straight_female(border=false) {
+        if (!fitting_is_male[f_NORTH])
+            fitting(male=fitting_is_male[f_NORTH], border=border);
+        translate([0,-connector_length,0])
+          scale([1,-1,1])
+            if (!fitting_is_male[f_SOUTH])
+                fitting(male=fitting_is_male[f_SOUTH], border=border);
     }
 }
 
 module connector_x(round=true) {
-    union() {
+    difference() {
+      connector_x_male(round);
+      connector_x_female(round);
+    }
+
+    module connector_x_male(round=true) {
         for (r=[0, 90, 180, 270]) {
             rotate([0,0,r]) {
-                translate([0,0.5*connector_length,0])
-                    fitting(male=true);
+                fitting_orientation = ((r+90)%360)/90;
+                translate([0,0.5*connector_length,0]) {
+                    if (fitting_is_male[fitting_orientation]) 
+                        fitting(male=fitting_is_male[fitting_orientation]);
+                }
                 if (round) {
                     profile_corner();
                 } else {
@@ -489,14 +540,34 @@ module connector_x(round=true) {
             }
         }
     }
+
+    module connector_x_female(round=true) {
+        for (r=[0, 90, 180, 270]) {
+            rotate([0,0,r]) {
+                fitting_orientation = ((r+90)%360)/90;
+                translate([0,0.5*connector_length,0]) {
+                    if (!fitting_is_male[fitting_orientation])    
+                        fitting(male=fitting_is_male[fitting_orientation]);
+                }
+            }
+        }
+    }
 }
 
 module connector_t_normal(round=true) {
-    union() {
+    difference() {
+      connector_t_normal_male(round);
+      connector_t_normal_female(round);
+  }
+
+    module connector_t_normal_male(round=true) {
         for (r=[0, 90, 180]) {
-            rotate([0,0,r])
-                translate([0,0.5*connector_length,0])
-                    fitting(male=true);
+            fitting_orientation = ((r+90)%360)/90;
+            if (fitting_is_male[fitting_orientation]) {
+                rotate([0,0,r])
+                    translate([0,0.5*connector_length,0])
+                        fitting(male=fitting_is_male[fitting_orientation]);
+            }
         }
         if (round) {
             for (r=[90, 180]) {
@@ -510,46 +581,75 @@ module connector_t_normal(round=true) {
         translate([0,0.5*connector_length,0])
             profile(connector_length);
     }
+
+    module connector_t_normal_female(round=true) {
+        for (r=[0, 90, 180]) {
+            fitting_orientation = ((r+90)%360)/90;
+            if (!fitting_is_male[fitting_orientation]) {
+                rotate([0,0,r])
+                    translate([0,0.5*connector_length,0])
+                        fitting(male=fitting_is_male[fitting_orientation]);
+            }
+        }
+    }
 }
 
 module connector_t_border(round=true) {
-    connector_straight(border=true);
-    rotate([0,0,90]) {
-        translate([0,0.5*connector_length+border_overhang,0]) {
-            fitting(male=true);
-            intersection() {
-                profile(connector_length+border_overhang);
-                skew = border_overhang;
-                max_radius = max(radius_top,radius_bottom);
-                multmatrix(m=[
-                    [1,0,0,-max_radius],
-                    [0,1,-skew/height,-0.5*connector_length],
-                    [0,0,1,0],
-                    [0,0,0,1]]) {
-                    cube([2*max_radius,connector_length+skew,height]);
+    difference() {
+        connector_t_border_male(round);
+        connector_t_border_female(round);
+    }
+    module connector_t_border_male(round=true) {
+        connector_straight(border=true);
+        rotate([0,0,90]) {
+            translate([0,0.5*connector_length+border_overhang,0]) {
+                if (fitting_is_male[f_WEST])
+                    fitting(male=fitting_is_male[f_WEST]);
+                intersection() {
+                    profile(connector_length+border_overhang);
+                    skew = border_overhang;
+                    max_radius = max(radius_top,radius_bottom);
+                    multmatrix(m=[
+                        [1,0,0,-max_radius],
+                        [0,1,-skew/height,-0.5*connector_length],
+                        [0,0,1,0],
+                        [0,0,0,1]]) {
+                            cube([2*max_radius,connector_length+skew,height]);
+                  }
+              }
+            }
+        }
+        if (round) {
+            skew = border_overhang;
+            multmatrix(m=[
+                [1,0,skew/height,-border_overhang],
+                [0,1,0,0],
+                [0,0,1,0],
+                [0,0,0,1]]) {
+                difference() {
+                    for (r=[90, 180]) {
+                        rotate([0,0,r]) {
+                            profile_corner(round=false, border=false);
+                        }
+                    }
+                    translate([radius_top,-0.5*connector_length,0])
+                        cube([radius_bottom,connector_length,height]);
                 }
             }
         }
     }
-    if (round) {
-        skew = border_overhang;
-        multmatrix(m=[
-            [1,0,skew/height,-border_overhang],
-            [0,1,0,0],
-            [0,0,1,0],
-            [0,0,0,1]]) {
-            difference() {
-                for (r=[90, 180]) {
-                    rotate([0,0,r]) {
-                        profile_corner(round=false, border=false);
-                    }
+
+    module connector_t_border_female(round=true) {
+        if (!fitting_is_male[f_WEST]) {
+            rotate([0,0,90]) {
+                translate([0,0.5*connector_length+border_overhang,0]) {
+                    fitting(male=fitting_is_male[f_WEST]);
                 }
-                translate([radius_top,-0.5*connector_length,0])
-                    cube([radius_bottom,connector_length,height]);
             }
         }
     }
 }
+
 
 module connector_t(round=true, border=false) {
     if (border)
@@ -560,23 +660,30 @@ module connector_t(round=true, border=false) {
 
 module connector_corner_normal(round_outside=true, round_inside=true) {
     border=false;
-    union() {
+    difference() {
+        connector_corner_normal_male(round_outside, round_inside);
+        connector_corner_normal_female(round_outside, round_inside);
+    }
+
+    module connector_corner_normal_male(round_outside=true, round_inside=true) {
         if (round_inside) {
             profile_corner(round=round_outside, border=border);
         }
 
         scale([-1,1,1]) {
-            translate([0,0.5*connector_length,0]) {
-                fitting(male=true, border=border);
+          translate([0,0.5*connector_length,0]) {
+                if (fitting_is_male[f_NORTH])
+                    fitting(male=fitting_is_male[f_NORTH], border=border);
                 if (!round_outside)
                     profile(length=0.5*connector_length, border=border);
             }
         }
         translate([0.5*connector_length,0,0]) {
             rotate([0,0,270]) {
-                fitting(male=true, border=border);
-                if (!round_outside)
-                    profile(length=0.5*connector_length, border=border);
+                  if (fitting_is_male[f_EAST])
+                      fitting(male=fitting_is_male[f_EAST], border=border);
+                  if (!round_outside)
+                      profile(length=0.5*connector_length, border=border);
             }
         }
 
@@ -588,6 +695,21 @@ module connector_corner_normal(round_outside=true, round_inside=true) {
                         square([max(radius_bottom, radius_top), height]);
                     }
                 }
+            }
+        }
+    }
+
+    module connector_corner_normal_female(round_outside=true, round_inside=true) {
+        if (!fitting_is_male[f_EAST]) {
+            translate([0.5*connector_length,0,0]) {
+                rotate([0,0,270]) {
+                    fitting(male=fitting_is_male[f_EAST], border=border);
+                }
+            }
+        }
+        if (!fitting_is_male[f_NORTH]) {
+            translate([0,0.5*connector_length,0]) {
+                fitting(male=fitting_is_male[f_NORTH], border=border);
             }
         }
     }
@@ -611,51 +733,78 @@ module connector_corner_border(round_outside=true, round_inside=true) {
         }
     }
 
-    union() {
-        if (round_inside) {
-            profile_corner(round=round_outside, border=border);
-        }
+    difference() {
+      connector_corner_border_male(round_outside, round_inside);
+      connector_corner_border_female(round_outside, round_inside);
+    }
 
-        scale([-1,1,1]) {
-            translate([0,0.5*connector_length,0]) {
-                fitting(male=true, border=border);
-                if (!round_outside) {
-                    side_wall();
+    module connector_corner_border_male(round_outside=true, round_inside=true) {
+       if (round_inside) {
+           profile_corner(round=round_outside, border=border);
+       }
+
+       scale([-1,1,1]) {
+           translate([0,0.5*connector_length,0]){
+               if (fitting_is_male[f_NORTH]) {
+                   fitting(male=fitting_is_male[f_NORTH], border=border);
+               }
+               if (!round_outside) {
+                   side_wall();
+               }
+           }
+       }
+
+       translate([0.5*connector_length+border_overhang,-border_overhang,0]) {
+           rotate([0,0,270]) {
+               if (fitting_is_male[f_EAST])
+                   fitting(male=fitting_is_male[f_EAST], border=border);
+               if (!round_outside) {
+                   side_wall();
+               }
+           }
+       }
+
+       if (!round_outside) {
+           skew = border_overhang;
+           multmatrix(m=[
+               [1,0,-skew/height,skew],
+               [0,1,-skew/height,0],
+               [0,0,1,0],
+               [0,0,0,1]]) {
+               rotate([0,0,180]) {
+                   rotate_extrude2(angle=90) {
+                       union() {
+                           square([radius_top, height_linear]);
+                           translate([0,height_linear]) {
+                               intersection() {
+                                   circle(r=radius_top);
+                                   square(radius_top);
+                               }
+                           }
+                       }
+                   }
+               }
+           }
+       }
+    }
+
+    module connector_corner_border_female(round_outside=true, round_inside=true) {
+        if (!fitting_is_male[f_EAST]) {
+            translate([0.5*connector_length+border_overhang,-border_overhang,0])  {
+                rotate([0,0,270]) {
+                    fitting(male=fitting_is_male[f_EAST], border=border);
                 }
             }
         }
-        translate([0.5*connector_length+border_overhang,-border_overhang,0]) {
-            rotate([0,0,270]) {
-                fitting(male=true, border=border);
-                if (!round_outside) {
-                    side_wall();
-                }
-            }
-        }
-
-        if (!round_outside) {
-            skew = border_overhang;
-            multmatrix(m=[
-                [1,0,-skew/height,skew],
-                [0,1,-skew/height,0],
-                [0,0,1,0],
-                [0,0,0,1]]) {
-                rotate([0,0,180]) {
-                    rotate_extrude2(angle=90) {
-                        union() {
-                            square([radius_top, height_linear]);
-                            translate([0,height_linear]) {
-                                intersection() {
-                                    circle(r=radius_top);
-                                    square(radius_top);
-                                }
-                            }
-                        }
-                    }
+        if (!fitting_is_male[f_NORTH]) {
+            scale([-1,1,1]) {
+                translate([0,0.5*connector_length,0]) {
+                    fitting(male=fitting_is_male[f_NORTH], border=border);
                 }
             }
         }
     }
+
 }
 
 module connector_corner(round_outside=true, round_inside=true, border=false) {
