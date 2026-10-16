@@ -1,11 +1,13 @@
 /* [Global Parameters] */
-part = "connector_all"; // [connector_all:All Connectors,connector_zero:Zero Length Straight Connector,connector_straight:Straight Connector,connector_t:Edgy T-Connector,connector_t_round:Round T-Connector,connector_x:Edgy X-Connector,connector_x_round:Round X-Connector,connector_corner_edgy:Edgy Corner Connector,connector_corner:Corner Connector,connector_corner_round:Round Corner Connector,divider:Straight Divider,divider_lowered:Divider With Lowered Section,divider_bend_right:Divider With Right Bend, divider_bend_left:Divider With Left Bend,connector_all_border:All Border Connectors,connector_zero_border:Border Zero Length Straight Connector,connector_straight_border:Border Straight Connector,connector_t_border:Border Edgy T-Connector,connector_t_round_border:Border Round T-Connector,connector_corner_edgy_border:Border Edgy Corner Connector,connector_corner_border:Border Corner Connector,connector_corner_round_border:Border Round Corner Connector,divider_border:Border Divider Parts]
+part = "connector_all"; // [connector_all:All Connectors,connector_zero:Zero Length Straight Connector,connector_straight:Straight Connector,connector_end:Edgy End Connector,connector_end_round:Round End Connector,connector_t:Edgy T-Connector,connector_t_round:Round T-Connector,connector_x:Edgy X-Connector,connector_x_round:Round X-Connector,connector_corner_edgy:Edgy Corner Connector,connector_corner:Corner Connector,connector_corner_round:Round Corner Connector,divider:Straight Divider,divider_lowered:Divider With Lowered Section,divider_lowered_connector:Divider With Lowered Connector End,connector_zero_lowered:Lowered Zero Length Connector,connector_straight_lowered:Lowered Straight Connector,connector_end_lowered:Lowered Edgy End Connector,connector_end_round_lowered:Lowered Round End Connector,divider_bend_right:Divider With Right Bend, divider_bend_left:Divider With Left Bend,connector_all_border:All Border Connectors,connector_zero_border:Border Zero Length Straight Connector,connector_straight_border:Border Straight Connector,connector_end_border:Border Edgy End Connector,connector_end_round_border:Border Round End Connector,connector_t_border:Border Edgy T-Connector,connector_t_round_border:Border Round T-Connector,connector_corner_edgy_border:Border Edgy Corner Connector,connector_corner_border:Border Corner Connector,connector_corner_round_border:Border Round Corner Connector,divider_border:Border Divider Parts]
 
 height = 50;
 width_bottom = 12;
 width_top = 5;
 // size of connector pieces
 connector_length = 18;
+// size of end connector pieces
+connector_end_length = 9;
 // use overhang for border pieces, in case your (side-) walls are not fully vertical
 border_overhang = 13;
 // adds a little bump on the connector, that locks pieces in the right position
@@ -23,6 +25,10 @@ lowered_height = 0.5; // [0:0.01:1]
 lowered_radius1_factor = 0.4;
 // radius for lowering the lowered divider on the other side relative to divider length
 lowered_radius2_factor = 0.08;
+// absolute height (mm) of the lowered connector end (and matching lowered connectors).
+// Must be <= height. Set this equal to a plain divider's height to make the lowered
+// end exactly match that divider's height.
+lowered_connector_height = 25; // [0:0.1:100]
 
 /* [Tolerances] */
 // Horizontal gap between parts
@@ -40,6 +46,19 @@ line_up_space = 40;
 radius_bottom = width_bottom/2;
 radius_top = width_top/2;
 height_linear = height-radius_top;
+// Convert the absolute lowered connector height (mm) into the fraction the lowered
+// divider expects. The divider lowers its plateau by height_lower = height_linear*fraction,
+// and the plateau crown ends up at z = height - height_lower. For that crown (the full
+// height of the lowered end) to equal lowered_connector_height exactly:
+//   height - height_linear*fraction == lowered_connector_height
+//   => fraction = (height - lowered_connector_height) / height_linear
+lowered_connector_fraction = max(0, min(1, (height - lowered_connector_height)/height_linear));
+// The lowered connectors are built by z-scaling the full part (whose total z-extent is
+// `height`, including the dome) by (1-lower). For a connector's top to land at the SAME
+// absolute height, lowered_connector_height:
+//   height*(1-lower) == lowered_connector_height
+//   => lower = 1 - lowered_connector_height/height
+lowered_connector_scale = max(0, min(1, 1 - lowered_connector_height/height));
 
 
 parts(part);
@@ -50,6 +69,8 @@ module parts(part) {
         line_up([line_up_space, 0]) {
             connector_zero();
             connector_straight();
+            connector_end(round=false);
+            connector_end(round=true);
             connector_t(round=false);
             connector_t(round=true);
             connector_x(round=false);
@@ -62,6 +83,10 @@ module parts(part) {
         connector_zero();
     else if (part == "connector_straight")
         connector_straight();
+    else if (part == "connector_end")
+        connector_end(round=false);
+    else if (part == "connector_end_round")
+        connector_end(round=true);
     else if (part == "connector_t")
         connector_t(round=false);
     else if (part == "connector_t_round")
@@ -80,6 +105,16 @@ module parts(part) {
         divider(length=divider_length);
     else if (part == "divider_lowered")
         divider_lowered(length=divider_length);
+    else if (part == "divider_lowered_connector")
+        divider_lowered(length=divider_length, flat_end=true, end_lower=lowered_connector_fraction);
+    else if (part == "connector_zero_lowered")
+        connector_zero(lower=lowered_connector_scale);
+    else if (part == "connector_straight_lowered")
+        connector_straight(lower=lowered_connector_scale);
+    else if (part == "connector_end_lowered")
+        connector_end(round=false, lower=lowered_connector_scale);
+    else if (part == "connector_end_round_lowered")
+        connector_end(round=true, lower=lowered_connector_scale);
     else if (part == "divider_bend_right")
         divider_bend(length=divider_length, distance=-bend_distance);
     else if (part == "divider_bend_left")
@@ -88,6 +123,10 @@ module parts(part) {
         connector_zero(border=true);
     else if (part == "connector_straight_border")
         connector_straight(border=true);
+    else if (part == "connector_end_border")
+        connector_end(round=false, border=true);
+    else if (part == "connector_end_round_border")
+        connector_end(round=true, border=true);
     else if (part == "connector_t_border")
         connector_t(round=false, border=true);
     else if (part == "connector_t_round_border")
@@ -102,6 +141,8 @@ module parts(part) {
         line_up([line_up_space, 0]) {
             connector_zero(border=true);
             connector_straight(border=true);
+            connector_end(round=false, border=true);
+            connector_end(round=true, border=true);
             connector_t(round=false, border=true);
             connector_t(round=true, border=true);
             connector_corner(round_outside=false, round_inside=false, border=true);
@@ -210,7 +251,22 @@ module profile_corner(round=false, border=false) {
     }
 }
 
-module fitting(male=true, border=false) {
+// fit_height limits the vertical extent of the connector so that it mates with a
+// part of reduced (lowered) height. Default (undef) keeps the full linear height.
+// The connector is z-scaled so it has the correct proportions for the reduced height
+// (same bottom/top widths, compressed vertically) rather than being truncated.
+module fitting(male=true, border=false, fit_height=undef) {
+    if (is_undef(fit_height)) {
+        fitting_full(male=male, border=border);
+    } else {
+        // scale the full-height fitting down to fit_height, keeping x/y proportions
+        z_factor = fit_height / height_linear;
+        scale([1, 1, z_factor])
+            fitting_full(male=male, border=border);
+    }
+}
+
+module fitting_full(male=true, border=false) {
     // shrink male piece a little bit
     gap = male ? gap : 0;
     gap_top = male ? gap_top : 0;
@@ -268,13 +324,21 @@ module divider(length=100, border=false) {
 }
 
 module divider_lowered(length=100, lower=lowered_height, radius1_factor=lowered_radius1_factor,
-                       radius2_factor=lowered_radius2_factor) {
+                       radius2_factor=lowered_radius2_factor, flat_end=false,
+                       end_lower=undef) {
     radius1 = length*radius1_factor;
     radius2 = length*radius2_factor;
     assert(radius1 >= radius_top, "divider_lowered: radius1 must be greater than width_top/2!");
     assert(radius2 >= radius_top, "divider_lowered: radius2 must be greater than width_top/2!");
 
-    height_lower = height_linear*lower;
+    // When flat_end is set, the lowered side runs flat at this height to the tip and
+    // gets a height-limited connector so it mates with another lowered part.
+    // end_lower lets you pick that height independently of the center "lower".
+    lower_eff = flat_end ? (is_undef(end_lower) ? lower : end_lower) : lower;
+
+    height_lower = height_linear*lower_eff;
+    // vertical extent of the connector blade at the lowered end (0..height_linear)
+    end_fit_height = height_linear - height_lower;
     angle1 = height_lower > 2*radius1 ? 90 : acos(1-0.5*height_lower/radius1);
     length_round1 = sin(angle1)*radius1;
     height_round1 = (1-cos(angle1))*radius1;
@@ -284,7 +348,8 @@ module divider_lowered(length=100, lower=lowered_height, radius1_factor=lowered_
     height_round2 = (1-cos(angle2))*radius2;
     height_ortho2 = height_lower > 2*radius2 ? height_lower-2*radius2 : 0;
     length_ortho = length - 2*(length_round1 + length_round2);
-    assert(length_ortho >= 0, "divider_lowered: radius1+radius2 too big or length too small");
+    assert(flat_end || length_ortho >= 0, "divider_lowered: radius1+radius2 too big or length too small");
+    assert(!flat_end || length - 2*length_round1 >= 0, "divider_lowered: radius1 too big or length too small");
 
     module round_edge(radius, angle, length_round, height_round, height_ortho) {
         translate([0, 0, height_linear-radius])
@@ -346,9 +411,10 @@ module divider_lowered(length=100, lower=lowered_height, radius1_factor=lowered_
                         union() {
                             square([length, height-height_lower-radius_top]);
                             flat_profile(radius1, length_round1, height_round1, height_ortho1);
-                            translate([length, 0])
-                                scale([-1, 1])
-                                    flat_profile(radius2, length_round2, height_round2, height_ortho2);
+                            if (!flat_end)
+                                translate([length, 0])
+                                    scale([-1, 1])
+                                        flat_profile(radius2, length_round2, height_round2, height_ortho2);
                         }
                     }
                 }
@@ -362,17 +428,28 @@ module divider_lowered(length=100, lower=lowered_height, radius1_factor=lowered_
             spread() {
                 // radius1 round edge
                 round_edge(radius1, angle1, length_round1, height_round1, height_ortho1);
-                // center round edge
-                if (length_ortho > 0) {
-                    translate([0, -2*length_round1, height-height_lower-radius_top])
-                        rotate([90, 0, 0])
-                            linear_extrude(length_ortho)
-                                circle(r=radius_top);
+                // center plateau rail
+                if (flat_end) {
+                    // run the lowered plateau rail flat out to the lowered end
+                    plateau_length = length - 2*length_round1;
+                    if (plateau_length > 0)
+                        translate([0, -2*length_round1, height-height_lower-radius_top])
+                            rotate([90, 0, 0])
+                                linear_extrude(plateau_length)
+                                    circle(r=radius_top);
+                } else {
+                    // center round edge
+                    if (length_ortho > 0) {
+                        translate([0, -2*length_round1, height-height_lower-radius_top])
+                            rotate([90, 0, 0])
+                                linear_extrude(length_ortho)
+                                    circle(r=radius_top);
+                    }
+                    // radius2 round edge
+                    translate([0, -length, 0])
+                        rotate([0,0,180])
+                            round_edge(radius2, angle2, length_round2, height_round2, height_ortho2);
                 }
-                // radius2 round edge
-                translate([0, -length, 0])
-                    rotate([0,0,180])
-                        round_edge(radius2, angle2, length_round2, height_round2, height_ortho2);
             }
 
             // flat top
@@ -398,7 +475,7 @@ module divider_lowered(length=100, lower=lowered_height, radius1_factor=lowered_
         rotate([0,0,180])
             fitting(male=false);
         translate([0,-length])
-            fitting(male=false);
+            fitting(male=false, fit_height=flat_end ? end_fit_height : undef);
     }
 }
 
@@ -454,22 +531,84 @@ module divider_bend(length=100, distance=bend_distance, radius_factor=bend_radiu
     }
 }
 
-module connector_zero(border=false) {
-    union() {
-        fitting(male=true, border=border);
-        scale([1,-1,1])
+module connector_zero(border=false, lower=0) {
+    if (lower > 0) {
+        scale([1, 1, (1-lower)]) {
+            union() {
+                fitting_full(male=true, border=border);
+                scale([1,-1,1])
+                    fitting_full(male=true, border=border);
+            }
+        }
+    } else {
+        union() {
             fitting(male=true, border=border);
+            scale([1,-1,1])
+                fitting(male=true, border=border);
+        }
     }
 }
 
-module connector_straight(border=false) {
+module connector_straight(border=false, lower=0) {
     translate([0,0.5*connector_length,0]) {
-        union() {
-            profile(length=connector_length, border=border);
+        if (lower > 0) {
+            z_factor = (1-lower);
+            scale([1, 1, z_factor]) {
+                union() {
+                    profile(length=connector_length, border=border);
+                    fitting_full(male=true, border=border);
+                    translate([0,-connector_length,0])
+                        scale([1,-1,1])
+                            fitting_full(male=true, border=border);
+                }
+            }
+        } else {
+            union() {
+                profile(length=connector_length, border=border);
+                fitting(male=true, border=border);
+                translate([0,-connector_length,0])
+                    scale([1,-1,1])
+                        fitting(male=true, border=border);
+            }
+        }
+    }
+}
+
+module connector_end(length=undef, round=false, border=false, lower=0) {
+    len = is_undef(length) ? connector_end_length : length;
+    if (lower > 0) {
+        z_factor = (1-lower);
+        scale([1, 1, z_factor]) {
+            connector_end_body(length=len, round=round, border=border, use_full_fitting=true);
+        }
+    } else {
+        connector_end_body(length=len, round=round, border=border, use_full_fitting=false);
+    }
+}
+
+module connector_end_body(length=connector_end_length, round=false, border=false, use_full_fitting=false) {
+    union() {
+        if (use_full_fitting)
+            fitting_full(male=true, border=border);
+        else
             fitting(male=true, border=border);
-            translate([0,-connector_length,0])
-                scale([1,-1,1])
-                    fitting(male=true, border=border);
+
+        if (round && !border) {
+            straight_len = max(0, length - radius_bottom);
+            if (straight_len > 0) {
+                profile(length=straight_len, border=false);
+            }
+            translate([0, -straight_len, 0]) {
+                rotate([0, 0, 180])
+                    rotate_extrude2(angle=180)
+                        intersection() {
+                            profile_shape(border=false);
+                            translate([0, -10]) square([1000, 1000]);
+                        }
+            }
+        } else {
+            if (length > 0)
+                profile(length=length, border=border);
         }
     }
 }
